@@ -90,3 +90,17 @@
 
 ;; TODO for each (->> flags flags->flags-right) and down
 ;; do a (sumo [<each lvar>] <sum>)
+(defn z5 []
+  (let [
+        lookup (flags->lvar-lookup-map f1)
+        board (vals lookup)
+        rights (->> flags flags->flags-right)
+        downs (->> flags flags->flags-down)
+        val-range (range 1 5)
+        in-range (fn [x] (fd/in x (apply fd/domain val-range)))
+        ]
+    (l/run 2 [q]
+      (l/== q board)
+      (l/everyg in-range board)
+      (fd/distinct board)
+      )))
