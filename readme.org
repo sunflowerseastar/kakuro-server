@@ -1,0 +1,7 @@
+* reference
+
+#+begin_quote
+Enter a non-zero single-decimal-digit number into each cell such that each "entry" (orthogonal line of contiguous cells) contains no duplicate numbers and that the sum of the numbers in each entry matches the number in the "flag" (black triangle) incident upon and collinear with that entry.
+#+end_quote
+
+- https://zotmeister.livejournal.com/11067.html
