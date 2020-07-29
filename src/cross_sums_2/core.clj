@@ -11,9 +11,6 @@
              {:direction :right :x 0 :y 2 :sum 7 :distance 2}
              })
 
-(defn coords-and-x-shape->vector-position [[x y] x-shape]
-  (-> y (* x-shape) (+ x)))
-
 
 (defn flags->flags-down [flags]
   (filter #(= (:direction %) :down) flags))
@@ -29,38 +26,30 @@
   (let [x-coords (range (inc x) (inc (+ x distance)))]
     (map #(vector % y) x-coords)))
 
-(defn b1 [flags]
+(defn coords-and-x-shape->vector-position [[x y] x-shape]
+  (-> y (* x-shape) (+ x)))
+
+(defn coords-and-shape->lvar-lookup-map [coords shape]
+  (->> coords
+       (map #(coords-and-x-shape->vector-position % (second shape)))
+       (distinct)
+       (reduce (fn [a b] (assoc a b (l/lvar))) {})
+       )
+  )
+
+(defn flags->lvar-lookup-map [flags]
   (let [
         r-coords (->> flags flags->flags-right (mapcat r->rcs))
         d-coords (->> flags flags->flags-down (mapcat d->dcs))
-        coords (set/union r-coords d-coords)
+        coords (set/union (into #{} r-coords) (into #{} d-coords))
         max-x (-> (apply max-key first coords) first)
         max-y (-> (apply max-key second coords) second)
         shape [(inc max-y) (inc max-x)]
         ]
-    (spyx shape)
+    ;; (spyx shape)
+    (coords-and-shape->lvar-lookup-map coords shape)
     ;; [coords max-x max-y shape]
     ))
-
-
-#_(l/defne rows-satisfy [n rows]
-  ([_ ()])
-  ([n [curr-row . rest-rows]]
-   (rows-satisfy rest-rows)
-   (l/+)
-   )
-  )
-
-#_(l/run* [q]
-  (l/== q board)
-  (l/everyg in-range board)
-  (map #() rows)
-  (l/everyg rows)
-  )
-
-(l/run* [qs]
-  (l/== qs (map vector (repeatedly l/lvar) (range 2))))
-
 
 (defn sumo [l sum]
   (l/fresh [a d sum-of-remaining]
@@ -69,34 +58,6 @@
      [(l/conso a d l)
       (fd/+ a sum-of-remaining sum)
       (sumo d sum-of-remaining)])))
-
-(defn z1 []
-  (let [
-        row1 (into [] (repeatedly 2 l/lvar))
-        rows (into [] row1)
-        ;; row2 (repeatedly 2 l/lvar)
-        in-range (fn [x] (fd/in x (apply fd/domain (range 1 3))))
-        ]
-    (spyx row1 rows)
-    (l/run* [r1]
-      (l/== r1 row1)
-      (l/everyg in-range row1)
-      ;; (sumo r1 6)
-      (l/everyg fd/distinct row1)
-      ;; (l/everyg fd/distinct board)
-      )))
-
-(defn z3 []
-  (let [board (repeatedly 3 l/lvar)
-        rows (into [] (map vec (partition 2 board)))
-        val-range (range 1 4)
-        in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
-    (l/run* [q]
-      (l/== q board)
-      (l/everyg in-range board)
-      (fd/distinct board)
-      ;; (l/everyg fd/distinct rows)
-      )))
 
 (defn z4 []
   (let [
@@ -127,15 +88,5 @@
       (sumo d2 13)
       )))
 
-(def rs ())
-
-(defn z2 []
-  (let [board (repeatedly 6 l/lvar)
-        rows (into [] (map vec (partition 3 board)))
-        val-range (range 1 4)
-        in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
-    (l/run* [q]
-      (l/== q board)
-      (l/everyg in-range board)
-      (l/everyg fd/distinct rows)
-      )))
+;; TODO for each (->> flags flags->flags-right) and down
+;; do a (sumo [<each lvar>] <sum>)
