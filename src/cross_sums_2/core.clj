@@ -24,12 +24,13 @@
   (let [x-coords (range (inc x) (inc (+ x distance)))]
     (map #(vector % y) x-coords)))
 
-(defn coords-and-x-shape->vector-position [[x y] x-shape]
+(defn coords-and-x-shape->vector-position [x-shape [x y]]
+  ;; (spyx x-shape x y)
   (-> y (* x-shape) (+ x)))
 
-(defn coords-and-shape->lvar-lookup-map [coords x-shape]
+(defn coords-and-shape->lvar-lookup-map [x-shape coords]
   (->> coords
-       (map #(coords-and-x-shape->vector-position % x-shape))
+       (map #(coords-and-x-shape->vector-position x-shape %))
        (distinct)
        (reduce (fn [a b] (assoc a b (l/lvar))) {})
        )
@@ -45,7 +46,7 @@
         x-shape (inc max-x)
         ]
     ;; (spyx shape)
-    {:lookup (coords-and-shape->lvar-lookup-map coords x-shape)
+    {:lookup (coords-and-shape->lvar-lookup-map x-shape coords)
      :x-shape x-shape}
     ;; [coords max-x max-y shape]
     ))
@@ -91,9 +92,11 @@
 ;;   (map coords)
 ;;   )
 
-(defn adds-up [{:keys [sum coords]}]
-  ;; (spyx sum coords)
-  (l/== 1 1))
+(defn adds-up [{:keys [sum lvars]}]
+  (spyx sum lvars)
+  (sumo lvars sum)
+  ;; (l/== 1 1)
+  )
 
 ;; TODO for each (->> flags flags->flags-right) and down
 ;; do a (sumo [<each lvar>] <sum>)
@@ -101,12 +104,16 @@
   (let [
         {:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
         board (vals lookup)
+        rs1 (->> flags flags->flags-right vec)
         rights (->> flags flags->flags-right
+                    vec
                     (map #(hash-map :sum (:sum %)
                                     :coords (vec (r->rcs %))
                                     :lvars (->> %
                                                 r->rcs
-                                                vec))))
+                                                (map (fn [coords] (coords-and-x-shape->vector-position x-shape coords)))
+                                                (map (fn [lvp] (get lookup lvp)))
+                                                ))))
         downs (->> flags flags->flags-down)
         val-range (range 1 5)
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))
