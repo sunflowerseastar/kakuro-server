@@ -1,12 +1,46 @@
 (ns cross-sums-2.core
   (:require [clojure.core.logic :as l]
+            [clojure.set :as set]
             [tupelo.core :refer [spyx]]
             [clojure.core.logic.fd :as fd]))
 
-(def flags #{
-             {:direction :down :x 1 :y 0 :down-value 1 :down-distance 1}
-             {:direction :right :x 0 :y 1 :right-value 1 :right-distance 1}
+(def f1 #{
+             {:direction :down :x 1 :y 0 :sum 4 :distance 2}
+             {:direction :down :x 2 :y 0 :sum 6 :distance 2}
+             {:direction :right :x 0 :y 1 :sum 3 :distance 2}
+             {:direction :right :x 0 :y 2 :sum 7 :distance 2}
              })
+
+(defn coords-and-x-shape->vector-position [[x y] x-shape]
+  (-> y (* x-shape) (+ x)))
+
+
+(defn flags->flags-down [flags]
+  (filter #(= (:direction %) :down) flags))
+
+(defn flags->flags-right [flags]
+  (filter #(= (:direction %) :right) flags))
+
+(defn d->dcs [{:keys [x y distance]}]
+  (let [y-coords (range (inc y) (inc (+ y distance)))]
+    (map #(vector x %) y-coords)))
+
+(defn r->rcs [{:keys [x y distance]}]
+  (let [x-coords (range (inc x) (inc (+ x distance)))]
+    (map #(vector % y) x-coords)))
+
+(defn b1 [flags]
+  (let [
+        r-coords (->> flags flags->flags-right (mapcat r->rcs))
+        d-coords (->> flags flags->flags-down (mapcat d->dcs))
+        coords (set/union r-coords d-coords)
+        max-x (-> (apply max-key first coords) first)
+        max-y (-> (apply max-key second coords) second)
+        shape [(inc max-y) (inc max-x)]
+        ]
+    (spyx shape)
+    ;; [coords max-x max-y shape]
+    ))
 
 
 #_(l/defne rows-satisfy [n rows]
@@ -92,6 +126,8 @@
       (sumo d1 5)
       (sumo d2 13)
       )))
+
+(def rs ())
 
 (defn z2 []
   (let [board (repeatedly 6 l/lvar)
