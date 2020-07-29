@@ -4,12 +4,10 @@
             [tupelo.core :refer [spyx]]
             [clojure.core.logic.fd :as fd]))
 
-(def f1 #{
-             {:direction :down :x 1 :y 0 :sum 4 :distance 2}
-             {:direction :down :x 2 :y 0 :sum 6 :distance 2}
-             {:direction :right :x 0 :y 1 :sum 3 :distance 2}
-             {:direction :right :x 0 :y 2 :sum 7 :distance 2}
-             })
+(def f1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
+          {:direction :down :x 2 :y 0 :sum 6 :distance 2}
+          {:direction :right :x 0 :y 1 :sum 3 :distance 2}
+          {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
 
 
 (defn flags->flags-down [flags]
@@ -29,9 +27,9 @@
 (defn coords-and-x-shape->vector-position [[x y] x-shape]
   (-> y (* x-shape) (+ x)))
 
-(defn coords-and-shape->lvar-lookup-map [coords shape]
+(defn coords-and-shape->lvar-lookup-map [coords x-shape]
   (->> coords
-       (map #(coords-and-x-shape->vector-position % (second shape)))
+       (map #(coords-and-x-shape->vector-position % x-shape))
        (distinct)
        (reduce (fn [a b] (assoc a b (l/lvar))) {})
        )
@@ -44,10 +42,11 @@
         coords (set/union (into #{} r-coords) (into #{} d-coords))
         max-x (-> (apply max-key first coords) first)
         max-y (-> (apply max-key second coords) second)
-        shape [(inc max-y) (inc max-x)]
+        x-shape (inc max-x)
         ]
     ;; (spyx shape)
-    (coords-and-shape->lvar-lookup-map coords shape)
+    {:lookup (coords-and-shape->lvar-lookup-map coords x-shape)
+     :x-shape x-shape}
     ;; [coords max-x max-y shape]
     ))
 
@@ -88,19 +87,34 @@
       (sumo d2 13)
       )))
 
+;; (defn coords->lvars [coords lookup]
+;;   (map coords)
+;;   )
+
+(defn adds-up [{:keys [sum coords]}]
+  ;; (spyx sum coords)
+  (l/== 1 1))
+
 ;; TODO for each (->> flags flags->flags-right) and down
 ;; do a (sumo [<each lvar>] <sum>)
 (defn z5 []
   (let [
-        lookup (flags->lvar-lookup-map f1)
+        {:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
         board (vals lookup)
-        rights (->> flags flags->flags-right)
+        rights (->> flags flags->flags-right
+                    (map #(hash-map :sum (:sum %)
+                                    :coords (vec (r->rcs %))
+                                    :lvars (->> %
+                                                r->rcs
+                                                vec))))
         downs (->> flags flags->flags-down)
         val-range (range 1 5)
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))
         ]
+    (spyx rights)
     (l/run 2 [q]
       (l/== q board)
       (l/everyg in-range board)
+      (l/everyg adds-up rights)
       (fd/distinct board)
       )))
