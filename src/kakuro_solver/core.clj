@@ -125,14 +125,22 @@
       (l/everyg #(fd/distinct (:lvars %)) rights)
       (l/everyg #(fd/distinct (:lvars %)) downs))))
 
+;; TODO receive something like f1, translate it, pass it to flags->entry-values, return solution
+(defn save-m [{:keys [body-params]}]
+  ;; TODO body-params isn't right??
+  (spyx "save-m" body-params)
+  (ok {:status :ok})
+  )
+
 (compojure/defroutes site-routes
   (compojure/GET "/" [] (str (vec (flags->entry-values f1))))
-  (compojure/POST "/json" [id] (ok {:result id}))
+  (compojure/POST "/json" req (save-m req))
+  ;; (compojure/POST "/json" [id] (ok {:result id}))
   (route/not-found "Page not found"))
 
 (def api
   (-> (handler/site site-routes)
       (wrap-file-info)
       (mw/wrap-format)
-      (wrap-cors :access-control-allow-origin #"http://localhost:8280" :access-control-allow-methods [:get])
+      (wrap-cors :access-control-allow-origin #"http://localhost:9500" :access-control-allow-methods [:get :post])
       (wrap-content-type)))
