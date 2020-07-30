@@ -2,18 +2,18 @@
   (:require [clojure.core.logic :as l]
             [clojure.core.logic.fd :as fd]
             [clojure.set :as set]
+            [compojure.core :as compojure]
             [compojure.handler :as handler]
             [compojure.route :as route]
             [ring.middleware.cors :refer [wrap-cors]]
+            [ring.util.http-response :refer :all]
             [tupelo.core :refer [spyx]])
-  (:use [compojure.core]
-        [muuntaja.middleware :as mw]
+  (:use [muuntaja.middleware :as mw]
         [ring.adapter.jetty]
         [ring.middleware.content-type :only (wrap-content-type)]
         [ring.middleware.file :only (wrap-file)]
         [ring.middleware.file-info :only (wrap-file-info)]
-        [ring.middleware.stacktrace :only (wrap-stacktrace)]
-        [ring.util.response :only (redirect)]))
+        [ring.middleware.stacktrace :only (wrap-stacktrace)]))
 
 (defn ->flags [fs]
   (->> fs (map (fn [[direction x y sum distance]]
@@ -125,8 +125,9 @@
       (l/everyg #(fd/distinct (:lvars %)) rights)
       (l/everyg #(fd/distinct (:lvars %)) downs))))
 
-(defroutes site-routes
-  (GET "/" [] "hi")
+(compojure/defroutes site-routes
+  (compojure/GET "/" [] (str (vec (flags->entry-values f1))))
+  (compojure/POST "/json" [id] (ok {:result id}))
   (route/not-found "Page not found"))
 
 (def api
