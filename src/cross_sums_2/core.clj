@@ -1,14 +1,13 @@
-(ns cross-sums-2.core
-  (:require [clojure.core.logic :as l]
-            [clojure.set :as set]
-            [tupelo.core :refer [spyx]]
-            [clojure.core.logic.fd :as fd]))
+(coords-and-x-shape->vector-positions cross-sums-2.core
+                                      (:require [clojure.core.logic :as l]
+                                                [clojure.set :as set]
+                                                [tupelo.core :refer [spyx]]
+                                                [clojure.core.logic.fd :as fd]))
 
 (def f1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
           {:direction :down :x 2 :y 0 :sum 6 :distance 2}
           {:direction :right :x 0 :y 1 :sum 3 :distance 2}
           {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
-
 
 (defn flags->flags-down [flags]
   (filter #(= (:direction %) :down) flags))
@@ -24,32 +23,35 @@
   (let [x-coords (range (inc x) (inc (+ x distance)))]
     (map #(vector % y) x-coords)))
 
-(defn x-shape-coords->lvp [x-shape [x y]]
-  ;; (spyx x-shape x y)
+(defn x-shape-coords->lvp
+  "Translate one x-y coordinate pair & x-shape (e.g. 2x3 matrix has x-shape of 3)
+  to an 'lvp' integer: 'lvar vector position'. For example, a coordinate [1 1] on
+  a 2x3 matrix would be 4:
+  [[0 1 2]
+   [3 4 5]]
+      ∧                         ∨
+  which corresponds to [0 1 2 3 4 5].
+
+  (x-shape-coords->lvp 3 [1 1]) ;; => 4
+  "
+  [x-shape [x y]]
   (-> y (* x-shape) (+ x)))
 
 (defn coords-and-shape->lvar-lookup-map [x-shape coords]
   (->> coords
        (map #(x-shape-coords->lvp x-shape %))
        (distinct)
-       (reduce (fn [a b] (assoc a b (l/lvar))) (sorted-map))
-       )
-  )
+       (reduce (fn [a b] (assoc a b (l/lvar))) (sorted-map))))
 
 (defn flags->lvar-lookup-map [flags]
-  (let [
-        r-coords (->> flags flags->flags-right (mapcat r->rcs))
+  (let [r-coords (->> flags flags->flags-right (mapcat r->rcs))
         d-coords (->> flags flags->flags-down (mapcat d->dcs))
         coords (set/union (into #{} r-coords) (into #{} d-coords))
         max-x (-> (apply max-key first coords) first)
         max-y (-> (apply max-key second coords) second)
-        x-shape (inc max-x)
-        ]
-    ;; (spyx shape)
+        x-shape (inc max-x)]
     {:lookup (coords-and-shape->lvar-lookup-map x-shape coords)
-     :x-shape x-shape}
-    ;; [coords max-x max-y shape]
-    ))
+     :x-shape x-shape}))
 
 (defn sumo [l sum]
   (l/fresh [a d sum-of-remaining]
@@ -59,67 +61,28 @@
       (fd/+ a sum-of-remaining sum)
       (sumo d sum-of-remaining)])))
 
-(defn z4 []
-  (let [
-        lv1 (l/lvar)
-        lv2 (l/lvar)
-        lv3 (l/lvar)
-        lv4 (l/lvar)
-        r1 [lv1 lv2]
-        r2 [lv3 lv4]
-        d1 [lv1 lv3]
-        d2 [lv2 lv4]
-        board [r1 r2]
-        b2 (concat r1 r2)
-        val-range (range 1 10)
-        in-range (fn [x] (fd/in x (apply fd/domain val-range)))
-        ]
-    (l/run* [q]
-      (l/== q b2)
-      (l/everyg in-range b2)
-      (fd/distinct b2)
-      ;; (sumo r1 3)
-      ;; (sumo r2 7)
-      ;; (sumo d1 4)
-      ;; (sumo d2 6)
-      (sumo r1 9)
-      (sumo r2 9)
-      (sumo d1 5)
-      (sumo d2 13)
-      )))
-
-;; (defn coords->lvars [coords lookup]
-;;   (map coords)
-;;   )
-
 (defn adds-up [{:keys [sum lvars]}]
   (spyx sum lvars)
-  (sumo lvars sum)
-  ;; (l/== 1 1)
-  )
+  (sumo lvars sum))
 
-;; TODO for each (->> flags flags->flags-right) and down
-;; do a (sumo [<each lvar>] <sum>)
 (defn z5 []
-  (let [
-        {:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
+  (let [{:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
         board (vals lookup)
         rights (->> flags flags->flags-right
                     (map #(sorted-map :sum (:sum %)
-                                    :coords (vec (r->rcs %))
-                                    :lvars (->> %
-                                                r->rcs
-                                                (map (fn [coords] (x-shape-coords->lvp x-shape coords)))
-                                                (map (fn [lvp] (get lookup lvp)))
-                                                ))))
+                                      :coords (vec (r->rcs %))
+                                      :lvars (->> %
+                                                  r->rcs
+                                                  (map (fn [coords] (x-shape-coords->lvp x-shape coords)))
+                                                  (map (fn [lvp] (get lookup lvp)))
+                                                  ))))
         downs (->> flags flags->flags-down)
         val-range (range 1 5)
-        in-range (fn [x] (fd/in x (apply fd/domain val-range)))
-        ]
+        in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
     (spyx rights)
     (l/run* [q]
       (l/== q board)
       (l/everyg in-range board)
       (l/everyg adds-up rights)
-      (fd/distinct board)
-      )))
+      ;; (l/everyg adds-up downs) TODO
+      (fd/distinct board))))
