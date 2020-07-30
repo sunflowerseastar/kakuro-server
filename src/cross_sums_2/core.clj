@@ -24,13 +24,13 @@
   (let [x-coords (range (inc x) (inc (+ x distance)))]
     (map #(vector % y) x-coords)))
 
-(defn coords-and-x-shape->vector-position [x-shape [x y]]
+(defn x-shape-coords->lvp [x-shape [x y]]
   ;; (spyx x-shape x y)
   (-> y (* x-shape) (+ x)))
 
 (defn coords-and-shape->lvar-lookup-map [x-shape coords]
   (->> coords
-       (map #(coords-and-x-shape->vector-position x-shape %))
+       (map #(x-shape-coords->lvp x-shape %))
        (distinct)
        (reduce (fn [a b] (assoc a b (l/lvar))) (sorted-map))
        )
@@ -109,7 +109,7 @@
                                     :coords (vec (r->rcs %))
                                     :lvars (->> %
                                                 r->rcs
-                                                (map (fn [coords] (coords-and-x-shape->vector-position x-shape coords)))
+                                                (map (fn [coords] (x-shape-coords->lvp x-shape coords)))
                                                 (map (fn [lvp] (get lookup lvp)))
                                                 ))))
         downs (->> flags flags->flags-down)
