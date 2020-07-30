@@ -66,8 +66,8 @@
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
 
-(defn z5 []
-  (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags-sample-1)
+(defn flags->entry-values [flags]
+  (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags)
         all-lvars (vals lvp-lvar-map)
         downs (->> flags flags->flags-down
                    (map (fn [{sum :sum :as down-flag}]
