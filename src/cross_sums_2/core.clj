@@ -1,10 +1,10 @@
-(coords-and-x-shape->vector-positions cross-sums-2.core
-                                      (:require [clojure.core.logic :as l]
-                                                [clojure.set :as set]
-                                                [tupelo.core :refer [spyx]]
-                                                [clojure.core.logic.fd :as fd]))
+(ns cross-sums-2.core
+  (:require [clojure.core.logic :as l]
+            [clojure.set :as set]
+            [tupelo.core :refer [spyx]]
+            [clojure.core.logic.fd :as fd]))
 
-(def f1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
+(def flags-sample-1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
           {:direction :down :x 2 :y 0 :sum 6 :distance 2}
           {:direction :right :x 0 :y 1 :sum 3 :distance 2}
           {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
@@ -25,7 +25,7 @@
 
 (defn x-shape-coords->lvp
   "Translate one x-y coordinate pair & x-shape (e.g. 2x3 matrix has x-shape of 3)
-  to an 'lvp' integer: 'lvar vector position'. For example, a coordinate [1 1] on
+  to an 'lvp' integer ('lvar vector position'). For example, a coordinate [1 1] on
   a 2x3 matrix would be 4:
   [[0 1 2]
    [3 4 5]]
@@ -37,20 +37,22 @@
   [x-shape [x y]]
   (-> y (* x-shape) (+ x)))
 
-(defn coords-and-shape->lvar-lookup-map [x-shape coords]
+(defn generate-lvar-lookup-map
+  "Given x-shape and a seq of coordinate pairs, return a sorted map of lvars,
+  keyed by their 'lvar vector position' (aka lvp)."
+  [x-shape coords]
   (->> coords
        (map #(x-shape-coords->lvp x-shape %))
        (distinct)
-       (reduce (fn [a b] (assoc a b (l/lvar))) (sorted-map))))
+       (reduce (fn [acc lvp] (assoc acc lvp (l/lvar))) (sorted-map))))
 
 (defn flags->lvar-lookup-map [flags]
   (let [r-coords (->> flags flags->flags-right (mapcat r->rcs))
         d-coords (->> flags flags->flags-down (mapcat d->dcs))
         coords (set/union (into #{} r-coords) (into #{} d-coords))
         max-x (-> (apply max-key first coords) first)
-        max-y (-> (apply max-key second coords) second)
         x-shape (inc max-x)]
-    {:lookup (coords-and-shape->lvar-lookup-map x-shape coords)
+    {:lookup (generate-lvar-lookup-map x-shape coords)
      :x-shape x-shape}))
 
 (defn sumo [l sum]
@@ -66,7 +68,7 @@
   (sumo lvars sum))
 
 (defn z5 []
-  (let [{:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
+  (let [{:keys [lookup x-shape]} (flags->lvar-lookup-map flags-sample-1)
         board (vals lookup)
         rights (->> flags flags->flags-right
                     (map #(sorted-map :sum (:sum %)
