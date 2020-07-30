@@ -64,26 +64,31 @@
       (sumo d sum-of-remaining)])))
 
 (defn adds-up [{:keys [sum lvars]}]
-  (spyx sum lvars)
   (sumo lvars sum))
 
 (defn z5 []
   (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags-sample-1)
-        board (vals lvp-lvar-map)
+        all-lvars (vals lvp-lvar-map)
+        downs (->> flags flags->flags-down
+                   (map (fn [{sum :sum :as down-flag}]
+                          {:sum sum
+                           :lvars (->> down-flag
+                                       down->coords
+                                       (map #(x-shape-coords->lvp x-shape %))
+                                       (map #(get lvp-lvar-map %)))})))
         rights (->> flags flags->flags-right
-                    (map (fn [right-flag]
-                           {:sum (:sum right-flag)
+                    (map (fn [{sum :sum :as right-flag}]
+                           {:sum sum
                             :lvars (->> right-flag
                                         right->coords
                                         (map #(x-shape-coords->lvp x-shape %))
                                         (map #(get lvp-lvar-map %)))})))
-        downs (->> flags flags->flags-down)
         val-range (range 1 5)
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
-    (spyx rights)
+    (spyx rights downs)
     (l/run* [q]
-      (l/== q board)
-      (l/everyg in-range board)
+      (l/== q all-lvars)
+      (l/everyg in-range all-lvars)
       (l/everyg adds-up rights)
-      ;; (l/everyg adds-up downs) TODO
-      (fd/distinct board))))
+      (l/everyg adds-up downs)
+      (fd/distinct all-lvars))))
