@@ -4,10 +4,20 @@
             [tupelo.core :refer [spyx]]
             [clojure.core.logic.fd :as fd]))
 
+(defn ->flags [fs]
+  (->> fs (map (fn [[direction x y sum distance]]
+                 {:direction (if (= direction :d) :down :right)
+                  :x x :y y :sum sum :distance distance}))))
+
 (def flags-sample-1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
                       {:direction :down :x 2 :y 0 :sum 6 :distance 2}
                       {:direction :right :x 0 :y 1 :sum 3 :distance 2}
                       {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
+
+(def f1 (->flags '([:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2])))
+(def f2 (->flags '([:d 1 0 5 2] [:d 2 0 8 2] [:r 0 1 4 2] [:r 0 2 9 2])))
+(def f3 (->flags '([:d 1 0 4 2] [:d 2 0 7 2] [:r 0 1 3 2] [:r 0 2 8 2])))
+
 
 (defn flags->flags-down [flags]
   (filter #(= (:direction %) :down) flags))
@@ -83,9 +93,8 @@
                                         right->coords
                                         (map #(x-shape-coords->lvp x-shape %))
                                         (map #(get lvp-lvar-map %)))})))
-        val-range (range 1 5)
+        val-range (range 1 10)
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
-    (spyx rights downs)
     (l/run* [q]
       (l/== q all-lvars)
       (l/everyg in-range all-lvars)
