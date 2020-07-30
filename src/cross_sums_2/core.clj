@@ -32,7 +32,7 @@
   (->> coords
        (map #(coords-and-x-shape->vector-position x-shape %))
        (distinct)
-       (reduce (fn [a b] (assoc a b (l/lvar))) {})
+       (reduce (fn [a b] (assoc a b (l/lvar))) (sorted-map))
        )
   )
 
@@ -104,10 +104,8 @@
   (let [
         {:keys [lookup x-shape]} (flags->lvar-lookup-map f1)
         board (vals lookup)
-        rs1 (->> flags flags->flags-right vec)
         rights (->> flags flags->flags-right
-                    vec
-                    (map #(hash-map :sum (:sum %)
+                    (map #(sorted-map :sum (:sum %)
                                     :coords (vec (r->rcs %))
                                     :lvars (->> %
                                                 r->rcs
@@ -119,7 +117,7 @@
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))
         ]
     (spyx rights)
-    (l/run 2 [q]
+    (l/run* [q]
       (l/== q board)
       (l/everyg in-range board)
       (l/everyg adds-up rights)
