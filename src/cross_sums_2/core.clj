@@ -28,6 +28,9 @@
 ;; should return nothing since it needs to duplicate numbers
 (def f7-x (->flags '([:d 1 0 3 2] [:d 2 0 5 2] [:r 0 1 4 2] [:r 0 2 4 2])))
 
+(def f8 (->flags '([:d 1 0 16 2] [:d 2 0 9 2] [:d 3 1 5 2]
+                   [:r 0 1 16 2] [:r 0 2 13 3] [:r 2 3 1 1])))
+
 (defn flags->flags-down [flags]
   (filter #(= (:direction %) :down) flags))
 

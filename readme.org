@@ -5,3 +5,6 @@ Enter a non-zero single-decimal-digit number into each cell such that each "entr
 #+end_quote
 
 - https://zotmeister.livejournal.com/11067.html
+
+- http://www.freexsums.com/instruct.html
+- http://www.freexsums.com/advanced.html
