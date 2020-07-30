@@ -1,8 +1,19 @@
-(ns cross-sums-2.core
+(ns kakuro-solver.core
   (:require [clojure.core.logic :as l]
+            [clojure.core.logic.fd :as fd]
             [clojure.set :as set]
-            [tupelo.core :refer [spyx]]
-            [clojure.core.logic.fd :as fd]))
+            [compojure.handler :as handler]
+            [compojure.route :as route]
+            [ring.middleware.cors :refer [wrap-cors]]
+            [tupelo.core :refer [spyx]])
+  (:use [compojure.core]
+        [muuntaja.middleware :as mw]
+        [ring.adapter.jetty]
+        [ring.middleware.content-type :only (wrap-content-type)]
+        [ring.middleware.file :only (wrap-file)]
+        [ring.middleware.file-info :only (wrap-file-info)]
+        [ring.middleware.stacktrace :only (wrap-stacktrace)]
+        [ring.util.response :only (redirect)]))
 
 (defn ->flags [fs]
   (->> fs (map (fn [[direction x y sum distance]]
@@ -113,3 +124,14 @@
       (l/everyg adds-up downs)
       (l/everyg #(fd/distinct (:lvars %)) rights)
       (l/everyg #(fd/distinct (:lvars %)) downs))))
+
+(defroutes site-routes
+  (GET "/" [] "hi")
+  (route/not-found "Page not found"))
+
+(def api
+  (-> (handler/site site-routes)
+      (wrap-file-info)
+      (mw/wrap-format)
+      (wrap-cors :access-control-allow-origin #"http://localhost:8280" :access-control-allow-methods [:get])
+      (wrap-content-type)))
