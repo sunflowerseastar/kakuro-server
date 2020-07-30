@@ -37,7 +37,7 @@
   [x-shape [x y]]
   (-> y (* x-shape) (+ x)))
 
-(defn generate-lvars-map
+(defn generate-lvp-lvar-map
   "Given x-shape and a seq of coordinate pairs, return a sorted map of lvars,
   keyed by their 'lvar vector position' (aka lvp)."
   [x-shape coords]
@@ -52,7 +52,7 @@
         coords (set/union (into #{} r-coords) (into #{} d-coords))
         max-x (-> (apply max-key first coords) first)
         x-shape (inc max-x)]
-    {:all-lvars (generate-lvars-map x-shape coords)
+    {:lvp-lvar-map (generate-lvp-lvar-map x-shape coords)
      :x-shape x-shape}))
 
 (defn sumo [l sum]
@@ -68,15 +68,15 @@
   (sumo lvars sum))
 
 (defn z5 []
-  (let [{:keys [all-lvars x-shape]} (flags->lvars-map flags-sample-1)
-        board (vals all-lvars)
+  (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags-sample-1)
+        board (vals lvp-lvar-map)
         rights (->> flags flags->flags-right
                     (map (fn [right-flag]
                            {:sum (:sum right-flag)
                             :lvars (->> right-flag
                                         right->coords
                                         (map #(x-shape-coords->lvp x-shape %))
-                                        (map #(get all-lvars %)))})))
+                                        (map #(get lvp-lvar-map %)))})))
         downs (->> flags flags->flags-down)
         val-range (range 1 5)
         in-range (fn [x] (fd/in x (apply fd/domain val-range)))]
