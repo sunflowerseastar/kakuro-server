@@ -98,17 +98,19 @@
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
 
-(defn flags->entry-values [flags]
-  (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags)
+(defn flags->entry-values [flags-to-be-solved]
+  (let [{:keys [lvp-lvar-map x-shape]} (flags->lvars-map flags-to-be-solved)
         all-lvars (vals lvp-lvar-map)
-        downs (->> flags flags->flags-down
+        downs (->> flags-to-be-solved
+                   flags->flags-down
                    (map (fn [{sum :sum :as down-flag}]
                           {:sum sum
                            :lvars (->> down-flag
                                        down->coords
                                        (map #(x-shape-coords->lvp x-shape %))
                                        (map #(get lvp-lvar-map %)))})))
-        rights (->> flags flags->flags-right
+        rights (->> flags-to-be-solved
+                    flags->flags-right
                     (map (fn [{sum :sum :as right-flag}]
                            {:sum sum
                             :lvars (->> right-flag
