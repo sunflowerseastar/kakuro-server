@@ -135,9 +135,9 @@
       (l/everyg #(fd/distinct (:lvars %)) downs))))
 
 (defn find-solution [req]
-  ;; (spyx (-> req :body-params :flags))
-  (let [solution (-> req :body-params :flags ->flags flags->entry-values)]
-    (ok {:status :ok :solution solution :test 123})))
+  ;; (spyx (-> req :body-params :flags-to-be-solved))
+  (let [solution (-> req :body-params :flags-to-be-solved ->flags flags->entry-values)]
+    (ok {:status :ok :solution solution})))
 
 (compojure/defroutes site-routes
   (compojure/GET "/" [] "ok")
