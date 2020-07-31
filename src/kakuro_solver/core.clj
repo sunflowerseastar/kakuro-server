@@ -6,15 +6,13 @@
             [compojure.handler :as handler]
             [compojure.route :as route]
             [muuntaja.core :as m]
+            [muuntaja.middleware :as mw]
+            [ring.adapter.jetty :refer :all]
+            [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [ring.util.http-response :refer :all]
-            [tupelo.core :refer [spyx]])
-  (:use [muuntaja.middleware :as mw]
-        [ring.adapter.jetty]
-        [ring.middleware.content-type :only (wrap-content-type)]
-        [ring.middleware.file :only (wrap-file)]
-        [ring.middleware.file-info :only (wrap-file-info)]
-        [ring.middleware.stacktrace :only (wrap-stacktrace)]))
+            [tupelo.core :refer [spyx]]))
 
 (defn ->flags [fs]
   (->> fs (map (fn [[direction x y sum distance]]
@@ -128,23 +126,16 @@
 
 ;; TODO receive something like f1, translate it, pass it to flags->entry-values, return solution
 (defn save-m [req]
-  ;; TODO body-params isn't right??
-  (spyx (:body req))
-  ;; (spyx (slurp (:body req)))
-  ;; (spyx (m/decode-response-body (:body req)))
-  ;; (spyx "save-m" body-params)
-  (ok {:status :ok})
-  )
+  (spyx (-> req :body-params))
+  (ok {:status :ok}))
 
 (compojure/defroutes site-routes
   (compojure/GET "/" [] (str (vec (flags->entry-values f1))))
   (compojure/POST "/json" req (save-m req))
-  ;; (compojure/POST "/json" [id] (ok {:result id}))
   (route/not-found "Page not found"))
 
 (def api
   (-> (handler/site site-routes)
-      (wrap-file-info)
       (mw/wrap-format)
       (wrap-cors :access-control-allow-origin #"http://localhost:9500" :access-control-allow-methods [:get :post])
       (wrap-content-type)))
