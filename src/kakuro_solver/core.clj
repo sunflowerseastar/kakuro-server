@@ -124,14 +124,14 @@
       (l/everyg #(fd/distinct (:lvars %)) rights)
       (l/everyg #(fd/distinct (:lvars %)) downs))))
 
-;; TODO receive something like f1, translate it, pass it to flags->entry-values, return solution
-(defn save-m [req]
-  (spyx (-> req :body-params))
-  (ok {:status :ok}))
+(defn find-solution [req]
+  ;; (spyx (-> req :body-params :flags))
+  (let [solution (-> req :body-params :flags ->flags flags->entry-values)]
+    (ok {:status :ok :solution solution :test 123})))
 
 (compojure/defroutes site-routes
-  (compojure/GET "/" [] (str (vec (flags->entry-values f1))))
-  (compojure/POST "/json" req (save-m req))
+  (compojure/GET "/" [] "ok")
+  (compojure/POST "/solve" req (find-solution req))
   (route/not-found "Page not found"))
 
 (def api
