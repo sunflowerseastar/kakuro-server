@@ -5,6 +5,7 @@
             [compojure.core :as compojure]
             [compojure.handler :as handler]
             [compojure.route :as route]
+            [muuntaja.core :as m]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.util.http-response :refer :all]
             [tupelo.core :refer [spyx]])
@@ -126,9 +127,12 @@
       (l/everyg #(fd/distinct (:lvars %)) downs))))
 
 ;; TODO receive something like f1, translate it, pass it to flags->entry-values, return solution
-(defn save-m [{:keys [body-params]}]
+(defn save-m [req]
   ;; TODO body-params isn't right??
-  (spyx "save-m" body-params)
+  (spyx (:body req))
+  ;; (spyx (slurp (:body req)))
+  ;; (spyx (m/decode-response-body (:body req)))
+  ;; (spyx "save-m" body-params)
   (ok {:status :ok})
   )
 
