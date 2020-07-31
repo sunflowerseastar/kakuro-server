@@ -14,10 +14,18 @@
             [ring.util.http-response :refer :all]
             [tupelo.core :refer [spyx]]))
 
-(defn ->flags [fs]
-  (->> fs (map (fn [[direction x y sum distance]]
-                 {:direction (if (= direction :d) :down :right)
-                  :x x :y y :sum sum :distance distance}))))
+(defn ->flags
+  "A flag is {:direction :down|:right :sum int :distance int}
+
+  A flag-to-be-solved is the same thing, but in a compact notation:
+  [:direction x y sum distance], ex. [:d 1 0 4 2]
+
+  This function takes flags-to-be-solved and returns flags."
+  [flags-to-be-solved]
+  (->> flags-to-be-solved
+       (map (fn [[direction x y sum distance]]
+              {:direction (if (= direction :d) :down :right)
+               :x x :y y :sum sum :distance distance}))))
 
 (def flags-sample-1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
                       {:direction :down :x 2 :y 0 :sum 6 :distance 2}
