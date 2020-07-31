@@ -1,4 +1,4 @@
-(ns kakuro-solver.core
+(ns kakuro-server.core
   (:require [clojure.core.logic :as l]
             [clojure.core.logic.fd :as fd]
             [clojure.set :as set]
