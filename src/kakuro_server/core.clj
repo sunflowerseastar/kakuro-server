@@ -126,13 +126,16 @@
                                         (map #(x-shape-coords->lvp x-shape %))
                                         (map #(get lvp-lvar-map %)))})))
         is-single-digit #(fd/in % (apply fd/domain (range 1 10)))]
-    (l/run* [q]
-      (l/== q all-lvars)
-      (l/everyg is-single-digit all-lvars)
-      (l/everyg adds-up rights)
-      (l/everyg adds-up downs)
-      (l/everyg #(fd/distinct (:lvars %)) rights)
-      (l/everyg #(fd/distinct (:lvars %)) downs))))
+    (spyx all-lvars)
+    (-> (l/run 1 [q]
+          (l/== q all-lvars)
+          (l/everyg is-single-digit all-lvars)
+          (l/everyg adds-up rights)
+          (l/everyg adds-up downs)
+          (l/everyg #(fd/distinct (:lvars %)) rights)
+          (l/everyg #(fd/distinct (:lvars %)) downs))
+        first
+        vec)))
 
 (defn find-solution [req]
   ;; (spyx (-> req :body-params :flags-to-be-solved))
