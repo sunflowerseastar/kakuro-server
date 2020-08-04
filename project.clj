@@ -14,5 +14,6 @@
                  [ring-cors "0.1.13"]
                  [tupelo "0.9.175"]]
   :plugins [[lein-ring "0.12.5"]]
-  :ring {:handler kakuro-server.core/api}
+  :ring {:handler kakuro-server.core/api
+         :port 3001}
   :repl-options {:init-ns kakuro-server.core})
