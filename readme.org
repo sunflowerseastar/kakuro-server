@@ -1,3 +1,76 @@
+* kakuro-server
+
+This:
+
+|      | :d 4 | :d 6 |
+| :r 3 |      |      |
+| :r 7 |      |      |
+
+corresponds to:
+
+#+begin_src clojure
+;; [:direction x y sum distance]
+
+(def flags-to-be-solved
+  [[:d 1 0 4 2]
+   [:d 2 0 6 2]
+   [:r 0 1 3 2]
+   [:r 0 2 7 2]])
+#+end_src
+
+The solver function, ~flags->entry-values~, wants "flags," not "flags-to-be-solved," so convert between them first with ~->flags~:
+
+ #+begin_src clojure
+(-> flags-to-be-solved
+    ->flags
+    flags->entry-values)
+;; => [1 2 3 4]
+ #+end_src
+
+The solution values, 1 2 3 4, correspond to the available "entry" square types. Here's the same grid as before, with the square types ("black" square type means there is "nothing" there, no flags and no entry):
+
+| black       | :d 4 (flag) | :d 6 (flag) |
+| :r 3 (flag) | entry ~0~   | entry ~1~   |
+| :r 7 (flag) | entry ~2~   | entry ~3~   |
+
+The number for each entry corresponds to the ~n~th element of the solution vector, ~[1 2 3 4]~:
+
+|      | :d 4 | :d 6 |
+| :r 3 |    1 |    2 |
+| :r 7 |    3 |    4 |
+
+This "placement" of the solution back into the board occurs on the front-end, ~board-solution->board-with-solutions~.
+
+** API
+
+For endpoint ~solve/~, put the flags-to-be-solved in a map:
+
+#+begin_src clojure
+{:flags-to-be-solved flags-to-be-solved}
+#+end_src
+
+Response:
+
+#+begin_src clojure
+{:status :ok :solution ((1 2 3 4))}
+#+end_src
+
+** Terminology
+
+flag:
+
+#+begin_src
+{:sum int
+ :distance int}
+#+end_src
+
+flag-to-be-solved:
+
+#+begin_src
+[:d/:r int int int int]
+[:direction x y sum distance]
+#+end_src
+
 * reference
 
 #+begin_quote
