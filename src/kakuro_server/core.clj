@@ -12,7 +12,12 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [ring.util.http-response :refer :all]
-            [tupelo.core :refer [spyx]]))
+            [tupelo.core :refer [spyx]])
+  (:use [clojail.core :only [sandbox]]
+        [clojail.testers :only [blacklist-symbols blacklist-objects]]))
+
+(def tester [(blacklist-symbols #{'alter-var-root})
+             (blacklist-objects [java.lang.Thread])])
 
 (defn ->flags
   "A flag is {:direction :down|:right :sum int :distance int}
