@@ -13,11 +13,7 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [ring.util.http-response :refer :all]
             [tupelo.core :refer [spyx]])
-  (:use [clojail.core :only [sandbox]]
-        [clojail.testers :only [blacklist-symbols blacklist-objects]]))
-
-(def tester [(blacklist-symbols #{'alter-var-root})
-             (blacklist-objects [java.lang.Thread])])
+  (:use [clojail.core :only [thunk-timeout]]))
 
 (defn ->flags
   "A flag is {:direction :down|:right :sum int :distance int}
@@ -131,7 +127,6 @@
                                         (map #(x-shape-coords->lvp x-shape %))
                                         (map #(get lvp-lvar-map %)))})))
         is-single-digit #(fd/in % (apply fd/domain (range 1 10)))]
-    (spyx all-lvars)
     (-> (l/run 1 [q]
           (l/== q all-lvars)
           (l/everyg is-single-digit all-lvars)
@@ -143,9 +138,12 @@
         vec)))
 
 (defn find-solution [req]
-  ;; (spyx (-> req :body-params :flags-to-be-solved))
-  (let [solution (-> req :body-params :flags-to-be-solved ->flags flags->entry-values)]
-    (ok {:status :ok :solution solution})))
+  (try
+    (thunk-timeout
+     #(let [solution (-> req :body-params :flags-to-be-solved ->flags flags->entry-values)]
+        (ok {:status :ok :solution solution}))
+     5000)
+    (catch Exception e (do (println "timeout") (bad-request "timeout")))))
 
 (compojure/defroutes site-routes
   (compojure/GET "/" [] "ok")
