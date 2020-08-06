@@ -148,6 +148,8 @@
 (compojure/defroutes site-routes
   (compojure/GET "/" [] "ok")
   (compojure/POST "/solve" req (find-solution req))
+  (compojure/GET "/api/" [] "ok")
+  (compojure/POST "/api/solve" req (find-solution req))
   (route/not-found "Page not found"))
 
 (def api
