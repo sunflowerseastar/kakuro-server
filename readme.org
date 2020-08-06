@@ -91,3 +91,6 @@ Enter a non-zero single-decimal-digit number into each cell such that each "entr
     (f/in x y z (f/interval 2 5))
     (f/eq (= 10 (+ x y z)))))
 #+end_src
+
+- clojail, thunk-timeout - https://stackoverflow.com/a/6697356
+  - https://github.com/flatland/clojail
