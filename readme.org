@@ -1,10 +1,17 @@
 * kakuro-server
 
-This is a kakuro solver with a single ~solve/~ endpoint for the [[https://github.com/sunflowerseastar/kakuro][front end]]. It receives a specific "clue notation" input and returns a "solution vector."
+This is a kakuro solver with a single ~solve/~ endpoint for the [[https://github.com/sunflowerseastar/kakuro][front end]]. It receives a specific *clue notation* input and returns a *solution vector*.
 
 #+begin_src
 input: [[:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2]]
 solution: [1 2 3 4]
+#+end_src
+
+* Quick Start
+
+#+begin_src sh
+lein ring server-headless
+curl localhost:3001 # => "ok"
 #+end_src
 
 * Overview
@@ -27,16 +34,7 @@ corresponds to the following clue notation:
    [:r 0 2 7 2]])
 #+end_src
 
-The main solver function is ~clues->solution-vector~. It accepts expanded clues (aka just "clues"), so the compact clue notation is converted first:
-
- #+begin_src clojure
-(-> clue-notation
-    clue-notation->clues
-    clues->solution-vector)
-;; => [1 2 3 4]
- #+end_src
-
-The solution values, 1 2 3 4, correspond to the available "entry" square types. Here's the same grid as before, with the square types made explicit. "Black" square type means there is "nothing" there, no clues and no entry:
+The main solver function is ~clue-notation->solution-vector~. The solution values, ~1 2 3 4~, correspond to the available *entry* square types. A *black* square type means there is "nothing" there, no clues and no entry. Here's the same grid as before, with the square types made explicit:
 
 | black       | clue ~:d 4~ | clue ~:d 6~ |
 | clue ~:r 3~ | entry ~0~   | entry ~1~   |
@@ -48,7 +46,7 @@ The number for each entry corresponds to the ~n~th element of the solution vecto
 | :r 3 |    1 |    2 |
 | :r 7 |    3 |    4 |
 
-The front-end is responsible for placing the solution back onto the board.
+The front-end is responsible for placing a solution back onto the board.
 
 ** API
 
