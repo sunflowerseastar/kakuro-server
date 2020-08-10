@@ -28,27 +28,18 @@
               {:direction (if (= direction :d) :down :right)
                :x x :y y :sum sum :distance distance}))))
 
-(def clues-sample-1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
-                      {:direction :down :x 2 :y 0 :sum 6 :distance 2}
-                      {:direction :right :x 0 :y 1 :sum 3 :distance 2}
-                      {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
-
-(def f1 (clue-notation->clues '([:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2])))
-(def f2 (clue-notation->clues '([:d 1 0 5 2] [:d 2 0 8 2] [:r 0 1 4 2] [:r 0 2 9 2])))
-(def f3 (clue-notation->clues '([:d 1 0 4 2] [:d 2 0 7 2] [:r 0 1 3 2] [:r 0 2 8 2])))
-
-(def f4 (clue-notation->clues '([:d 1 0 3 2] [:d 2 0 12 2] [:d 3 0 13 2]
-                                [:r 0 1 15 3] [:r 0 2 13 3])))
-(def f5 (clue-notation->clues '([:d 1 0 12 3] [:d 2 0 17 3] [:d 3 0 13 3]
-                                [:r 0 1 19 3] [:r 0 2 16 3] [:r 0 3 7 3])))
-(def f6 (clue-notation->clues '([:d 1 0 6 3] [:d 2 0 17 3] [:d 3 0 22 3]
-                                [:r 0 1 15 3] [:r 0 2 13 3] [:r 0 3 17 3])))
-
-;; should return nothing since it needs to duplicate numbers
-(def f7-x (clue-notation->clues '([:d 1 0 3 2] [:d 2 0 5 2] [:r 0 1 4 2] [:r 0 2 4 2])))
-
-(def f8 (clue-notation->clues '([:d 1 0 16 2] [:d 2 0 9 2] [:d 3 1 5 2]
-                                [:r 0 1 16 2] [:r 0 2 13 3] [:r 2 3 1 1])))
+(def clues-expanded-1 #{{:direction :down :x 1 :y 0 :sum 4 :distance 2}
+                        {:direction :down :x 2 :y 0 :sum 6 :distance 2}
+                        {:direction :right :x 0 :y 1 :sum 3 :distance 2}
+                        {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
+(def clue-notation-1 '([:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2]))
+(def c-2 '([:d 1 0 5 2] [:d 2 0 8 2] [:r 0 1 4 2] [:r 0 2 9 2]))
+(def c-3 '([:d 1 0 4 2] [:d 2 0 7 2] [:r 0 1 3 2] [:r 0 2 8 2]))
+(def c-4 '([:d 1 0 3 2] [:d 2 0 12 2] [:d 3 0 13 2] [:r 0 1 15 3] [:r 0 2 13 3]))
+(def c-5 '([:d 1 0 12 3] [:d 2 0 17 3] [:d 3 0 13 3] [:r 0 1 19 3] [:r 0 2 16 3] [:r 0 3 7 3]))
+(def c-6 '([:d 1 0 6 3] [:d 2 0 17 3] [:d 3 0 22 3] [:r 0 1 15 3] [:r 0 2 13 3] [:r 0 3 17 3]))
+(def c-7 '([:d 1 0 16 2] [:d 2 0 9 2] [:d 3 1 5 2] [:r 0 1 16 2] [:r 0 2 13 3] [:r 2 3 1 1]))
+(def c-8-no-solutions '([:d 1 0 3 2] [:d 2 0 5 2] [:r 0 1 4 2] [:r 0 2 4 2]))
 
 (defn clues->clues-down [clues]
   (filter #(= (:direction %) :down) clues))
@@ -107,8 +98,9 @@
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
 
-(defn clues->solution-vector [clues]
-  (let [{:keys [lvp-lvar-map x-shape]} (clues->lvars-map clues)
+(defn clue-notation->solution-vector [clue-notation]
+  (let [clues (clue-notation->clues clue-notation)
+        {:keys [lvp-lvar-map x-shape]} (clues->lvars-map clues)
         all-lvars (vals lvp-lvar-map)
         downs (->> clues
                    clues->clues-down
@@ -140,7 +132,7 @@
 (defn find-solution [req]
   (try
     (thunk-timeout
-     #(let [solution (-> req :body-params :clue-notation clue-notation->clues clues->solution-vector)]
+     #(let [solution (-> req :body-params :clue-notation clue-notation->solution-vector)]
         (ok {:status :ok :solution solution}))
      5000)
     (catch Exception e (do (println "timeout") (bad-request "timeout")))))
