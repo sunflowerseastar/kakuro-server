@@ -1,37 +1,46 @@
 * kakuro-server
 
+This is a kakuro solver with a single ~solve/~ endpoint for the [[https://github.com/sunflowerseastar/kakuro][front end]]. It receives a specific "clue notation" input and returns a "solution vector."
+
+#+begin_src
+input: [[:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2]]
+solution: [1 2 3 4]
+#+end_src
+
+* Overview
+
 This:
 
 |      | :d 4 | :d 6 |
 | :r 3 |      |      |
 | :r 7 |      |      |
 
-corresponds to:
+corresponds to the following clue notation:
 
 #+begin_src clojure
 ;; [:direction x y sum distance]
 
-(def flags-to-be-solved
+(def clue-notation
   [[:d 1 0 4 2]
    [:d 2 0 6 2]
    [:r 0 1 3 2]
    [:r 0 2 7 2]])
 #+end_src
 
-The solver function, ~flags->entry-values~, wants "flags," not "flags-to-be-solved," so convert between them first with ~->flags~:
+The main solver function is ~clues->solution-vector~. It accepts expanded clues (aka just "clues"), so the compact clue notation is converted first:
 
  #+begin_src clojure
-(-> flags-to-be-solved
-    ->flags
-    flags->entry-values)
+(-> clue-notation
+    clue-notation->clues
+    clues->solution-vector)
 ;; => [1 2 3 4]
  #+end_src
 
-The solution values, 1 2 3 4, correspond to the available "entry" square types. Here's the same grid as before, with the square types ("black" square type means there is "nothing" there, no flags and no entry):
+The solution values, 1 2 3 4, correspond to the available "entry" square types. Here's the same grid as before, with the square types made explicit. "Black" square type means there is "nothing" there, no clues and no entry:
 
-| black       | :d 4 (flag) | :d 6 (flag) |
-| :r 3 (flag) | entry ~0~   | entry ~1~   |
-| :r 7 (flag) | entry ~2~   | entry ~3~   |
+| black       | clue ~:d 4~ | clue ~:d 6~ |
+| clue ~:r 3~ | entry ~0~   | entry ~1~   |
+| clue ~:r 7~ | entry ~2~   | entry ~3~   |
 
 The number for each entry corresponds to the ~n~th element of the solution vector, ~[1 2 3 4]~:
 
@@ -39,45 +48,23 @@ The number for each entry corresponds to the ~n~th element of the solution vecto
 | :r 3 |    1 |    2 |
 | :r 7 |    3 |    4 |
 
-This "placement" of the solution back into the board occurs on the front-end, ~board-solution->board-with-solutions~.
+The front-end is responsible for placing the solution back onto the board.
 
 ** API
 
-For endpoint ~solve/~, put the flags-to-be-solved in a map:
+For endpoint ~solve/~, put the clue-notation in a map:
 
 #+begin_src clojure
-{:flags-to-be-solved flags-to-be-solved}
+{:clue-notation clue-notation}
 #+end_src
 
 Response:
 
 #+begin_src clojure
-{:status :ok :solution ((1 2 3 4))}
+{:status :ok :solution [1 2 3 4]}
 #+end_src
 
-** Terminology
-
-flag:
-
-#+begin_src
-{:sum int
- :distance int}
-#+end_src
-
-flag-to-be-solved:
-
-#+begin_src
-[:d/:r int int int int]
-[:direction x y sum distance]
-#+end_src
-
-* reference
-
-#+begin_quote
-Enter a non-zero single-decimal-digit number into each cell such that each "entry" (orthogonal line of contiguous cells) contains no duplicate numbers and that the sum of the numbers in each entry matches the number in the "flag" (black triangle) incident upon and collinear with that entry.
-#+end_quote
-
-- https://zotmeister.livejournal.com/11067.html
+* Reference
 
 - http://www.freexsums.com/instruct.html
 - http://www.freexsums.com/advanced.html
@@ -94,3 +81,9 @@ Enter a non-zero single-decimal-digit number into each cell such that each "entr
 
 - clojail, thunk-timeout - https://stackoverflow.com/a/6697356
   - https://github.com/flatland/clojail
+
+#+begin_quote
+Enter a non-zero single-decimal-digit number into each cell such that each "entry" (orthogonal line of contiguous cells) contains no duplicate numbers and that the sum of the numbers in each entry matches the number in the "flag" (black triangle) incident upon and collinear with that entry.
+#+end_quote
+
+- https://zotmeister.livejournal.com/11067.html
