@@ -15,6 +15,8 @@
             [tupelo.core :refer [spyx]])
   (:use [clojail.core :only [thunk-timeout]]))
 
+(def timeout-ms 10000)
+
 (defn clue-notation->clues
   "A clue is {:direction :down|:right :sum int :distance int}
 
@@ -134,7 +136,7 @@
     (thunk-timeout
      #(let [solution (-> req :body-params :clue-notation clue-notation->solution-vector)]
         (ok {:status :ok :solution solution}))
-     5000)
+     timeout-ms)
     (catch Exception e (do (println "timeout") (bad-request "timeout")))))
 
 (compojure/defroutes site-routes
