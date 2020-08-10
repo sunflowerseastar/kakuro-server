@@ -1,6 +1,7 @@
 (ns kakuro-server.core
   (:require [clojure.core.logic :as l]
             [clojure.core.logic.fd :as fd]
+            [clojure.core.memoize :as memo]
             [clojure.set :as set]
             [compojure.core :as compojure]
             [compojure.handler :as handler]
@@ -131,10 +132,16 @@
         first
         vec)))
 
+(def memo-clue-notation->solution-vector
+  (memo/lru clue-notation->solution-vector :lru/threshold 16))
+
 (defn find-solution [req]
   (try
     (thunk-timeout
-     #(let [solution (-> req :body-params :clue-notation clue-notation->solution-vector)]
+     #(let [solution (-> req
+                         :body-params
+                         :clue-notation
+                         memo-clue-notation->solution-vector)]
         (ok {:status :ok :solution solution}))
      timeout-ms)
     (catch Exception e (do (println "timeout") (bad-request "timeout")))))
