@@ -109,12 +109,11 @@
         all-lvars (vals lvp-lvar-map)
         lvar-groups (clues->lvar-groups clues x-shape lvp-lvar-map)
         is-single-digit #(fd/in % (apply fd/domain (range 1 10)))]
-    (-> (l/run 1 [q]
+    (-> (l/run* [q]
           (l/== q all-lvars)
           (l/everyg is-single-digit all-lvars)
           (l/everyg adds-up lvar-groups)
           (l/everyg #(fd/distinct (:lvars %)) lvar-groups))
-        first
         vec)))
 
 (def memo-clue-notation->solution-vector
