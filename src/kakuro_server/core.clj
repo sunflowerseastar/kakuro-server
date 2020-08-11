@@ -141,8 +141,8 @@
     (try
       (thunk-timeout
        #(let [solution (if all-solutions
-                         (clue-notation->all-solutions clue-notation)
-                         (clue-notation->one-solution clue-notation))]
+                         (memo-clue-notation->all-solutions clue-notation)
+                         (memo-clue-notation->one-solution clue-notation))]
           (ok {:status :ok :solution solution}))
        timeout-ms)
       (catch Exception e (do (println "timeout") (bad-request "timeout"))))))
