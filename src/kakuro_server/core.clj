@@ -75,9 +75,9 @@
   The x-shape is needed for lvar-group generation later, and would require re-computations
   if not returned now along with the lvp-lvar-map."
   [clues]
-  (let [coords-2 (->> clues (mapcat clue->coords) distinct)
-        x-shape (-> (apply max-key first coords-2) first inc)]
-    {:lvp-lvar-map (generate-lvp-lvar-map x-shape coords-2)
+  (let [coords (->> clues (mapcat clue->coords) distinct)
+        x-shape (-> (apply max-key first coords) first inc)]
+    {:lvp-lvar-map (generate-lvp-lvar-map x-shape coords)
      :x-shape x-shape}))
 
 (defn clues->lvar-groups [clues x-shape lvp-lvar-map]
@@ -93,12 +93,12 @@
   "from https://spin.atomicobject.com/2015/12/14/logic-programming-clojure-finite-domain-constraints/
   (and https://blog.taylorwood.io/2018/05/10/clojure-logic.html )"
   [vars sum]
-  (l/fresh [vhead vtail run-sum]
+  (l/fresh [lvar-head lvar-second lvar-rest]
     (l/conde
      [(l/== vars ()) (l/== sum 0)]
-     [(l/conso vhead vtail vars)
-      (fd/+ vhead run-sum sum)
-      (sumo vtail run-sum)])))
+     [(l/conso lvar-head lvar-second vars)
+      (fd/+ lvar-head lvar-rest sum)
+      (sumo lvar-second lvar-rest)])))
 
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
