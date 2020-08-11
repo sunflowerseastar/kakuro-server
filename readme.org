@@ -66,15 +66,18 @@ Response:
 
 - http://www.freexsums.com/instruct.html
 - http://www.freexsums.com/advanced.html
-
 - https://www.lvh.io/posts/solving-regex-crosswords/
+
+- https://stackoverflow.com/a/55319055
+- https://blog.taylorwood.io/2018/05/10/clojure-logic.html
+- https://spin.atomicobject.com/2015/12/14/logic-programming-clojure-finite-domain-constraints/
 
 #+begin_src clojure
 (l/run* [q]
   (l/fresh [x y z]
     (l/== [x y z] q)
-    (f/in x y z (f/interval 2 5))
-    (f/eq (= 10 (+ x y z)))))
+    (fd/in x y z (fd/interval 2 5))
+    (fd/eq (= 10 (+ x y z)))))
 #+end_src
 
 - clojail, thunk-timeout - https://stackoverflow.com/a/6697356
