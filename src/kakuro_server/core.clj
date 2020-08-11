@@ -34,6 +34,7 @@
                         {:direction :right :x 0 :y 1 :sum 3 :distance 2}
                         {:direction :right :x 0 :y 2 :sum 7 :distance 2}})
 (def clue-notation-1 '([:d 1 0 4 2] [:d 2 0 6 2] [:r 0 1 3 2] [:r 0 2 7 2]))
+;; c-2 has 2 possible solutions
 (def c-2 '([:d 1 0 5 2] [:d 2 0 8 2] [:r 0 1 4 2] [:r 0 2 9 2]))
 (def c-3 '([:d 1 0 4 2] [:d 2 0 7 2] [:r 0 1 3 2] [:r 0 2 8 2]))
 (def c-4 '([:d 1 0 3 2] [:d 2 0 12 2] [:d 3 0 13 2] [:r 0 1 15 3] [:r 0 2 13 3]))
@@ -103,7 +104,7 @@
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
 
-(defn clue-notation->solution-vector [clue-notation]
+(defn clue-notation->all-solutions [clue-notation]
   (let [clues (clue-notation->clues clue-notation)
         {:keys [lvp-lvar-map x-shape]} (clues->lvars-map clues)
         all-lvars (vals lvp-lvar-map)
@@ -116,25 +117,43 @@
           (l/everyg adds-up lvar-groups))
         vec)))
 
-(def memo-clue-notation->solution-vector
-  (memo/lru clue-notation->solution-vector :lru/threshold 16))
+(defn clue-notation->one-solution [clue-notation]
+  (let [clues (clue-notation->clues clue-notation)
+        {:keys [lvp-lvar-map x-shape]} (clues->lvars-map clues)
+        all-lvars (vals lvp-lvar-map)
+        lvar-groups (clues->lvar-groups clues x-shape lvp-lvar-map)
+        is-single-digit #(fd/in % (apply fd/domain (range 1 10)))]
+    (-> (l/run 1 [q]
+          (l/== q all-lvars)
+          (l/everyg is-single-digit all-lvars)
+          (l/everyg #(fd/distinct (:lvars %)) lvar-groups)
+          (l/everyg adds-up lvar-groups))
+        vec)))
 
-(defn find-solution [req]
-  (try
-    (thunk-timeout
-     #(let [solution (-> req
-                         :body-params
-                         :clue-notation
-                         memo-clue-notation->solution-vector)]
-        (ok {:status :ok :solution solution}))
-     timeout-ms)
-    (catch Exception e (do (println "timeout") (bad-request "timeout")))))
+(def memo-clue-notation->all-solutions
+  (memo/lru clue-notation->all-solutions :lru/threshold 16))
+
+(def memo-clue-notation->one-solution
+  (memo/lru clue-notation->one-solution :lru/threshold 16))
+
+(defn find-solution [req & {:keys [all-solutions] :or {all-solutions false}}]
+  (let [clue-notation (-> req :body-params :clue-notation)]
+    (try
+      (thunk-timeout
+       #(let [solution (if all-solutions
+                         (clue-notation->all-solutions clue-notation)
+                         (clue-notation->one-solution clue-notation))]
+          (ok {:status :ok :solution solution}))
+       timeout-ms)
+      (catch Exception e (do (println "timeout") (bad-request "timeout"))))))
 
 (compojure/defroutes site-routes
   (compojure/GET "/" [] "ok")
   (compojure/POST "/solve" req (find-solution req))
+  (compojure/POST "/solve-all" req (find-solution req :all-solutions true))
   (compojure/GET "/api/" [] "ok")
   (compojure/POST "/api/solve" req (find-solution req))
+  (compojure/POST "/api/solve-all" req (find-solution req :all-solutions true))
   (route/not-found "Page not found"))
 
 (def api
