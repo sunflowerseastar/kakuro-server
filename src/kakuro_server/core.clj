@@ -2,7 +2,6 @@
   (:require [clojure.core.logic :as l]
             [clojure.core.logic.fd :as fd]
             [clojure.core.memoize :as memo]
-            [clojure.set :as set]
             [compojure.core :as compojure]
             [compojure.handler :as handler]
             [compojure.route :as route]
@@ -11,7 +10,6 @@
             [ring.adapter.jetty :refer :all]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [ring.util.http-response :refer :all]
             [tupelo.core :refer [spyx]])
   (:use [clojail.core :only [thunk-timeout]]))
@@ -44,19 +42,10 @@
 (def c-7 '([:d 1 0 16 2] [:d 2 0 9 2] [:d 3 1 5 2] [:r 0 1 16 2] [:r 0 2 13 3] [:r 2 3 1 1]))
 (def c-8-no-solutions '([:d 1 0 3 2] [:d 2 0 5 2] [:r 0 1 4 2] [:r 0 2 4 2]))
 
-(defn clues->clues-down [clues]
-  (filter #(= (:direction %) :down) clues))
-
-(defn clues->clues-right [clues]
-  (filter #(= (:direction %) :right) clues))
-
-(defn down->coords [{:keys [x y distance]}]
-  (let [y-coords (range (inc y) (inc (+ y distance)))]
-    (map #(vector x %) y-coords)))
-
-(defn right->coords [{:keys [x y distance]}]
-  (let [x-coords (range (inc x) (inc (+ x distance)))]
-    (map #(vector % y) x-coords)))
+(defn clue->coords [{:keys [direction x y distance]}]
+  (if (= direction :right)
+    (map #(vector % y) (range (inc x) (inc (+ x distance))))
+    (map #(vector x %) (range (inc y) (inc (+ y distance))))))
 
 (defn x-shape-coords->lvp
   "Translate one x-y coordinate pair & x-shape (e.g. 2x3 matrix has x-shape of 3)
@@ -78,25 +67,38 @@
   [x-shape coords]
   (->> coords
        (map #(x-shape-coords->lvp x-shape %))
-       (distinct)
+       ;; one lvar is created for each entry on the board
        (reduce (fn [acc lvp] (assoc acc lvp (l/lvar))) (sorted-map))))
 
-(defn clues->lvars-map [clues]
-  (let [r-coords (->> clues clues->clues-right (mapcat right->coords))
-        d-coords (->> clues clues->clues-down (mapcat down->coords))
-        coords (set/union (into #{} r-coords) (into #{} d-coords))
-        max-x (-> (apply max-key first coords) first)
-        x-shape (inc max-x)]
-    {:lvp-lvar-map (generate-lvp-lvar-map x-shape coords)
+(defn clues->lvars-map
+  "The lvp-lvar-map is a sorted map that has one lvar for every entry (coordinate pair).
+  The x-shape is needed for lvar-group generation later, and would require re-computations
+  if not returned now along with the lvp-lvar-map."
+  [clues]
+  (let [coords-2 (->> clues (mapcat clue->coords) distinct)
+        x-shape (-> (apply max-key first coords-2) first inc)]
+    {:lvp-lvar-map (generate-lvp-lvar-map x-shape coords-2)
      :x-shape x-shape}))
 
-(defn sumo [l sum]
-  (l/fresh [a d sum-of-remaining]
+(defn clues->lvar-groups [clues x-shape lvp-lvar-map]
+  (->> clues
+       (map (fn [{:keys [direction sum] :as clue}]
+              {:sum sum
+               :lvars (->> clue
+                           clue->coords
+                           (map #(x-shape-coords->lvp x-shape %))
+                           (map #(get lvp-lvar-map %)))}))))
+
+(defn sumo
+  "from https://spin.atomicobject.com/2015/12/14/logic-programming-clojure-finite-domain-constraints/
+  (and https://blog.taylorwood.io/2018/05/10/clojure-logic.html )"
+  [vars sum]
+  (l/fresh [vhead vtail run-sum]
     (l/conde
-     [(l/== l ()) (l/== sum 0)]
-     [(l/conso a d l)
-      (fd/+ a sum-of-remaining sum)
-      (sumo d sum-of-remaining)])))
+     [(l/== vars ()) (l/== sum 0)]
+     [(l/conso vhead vtail vars)
+      (fd/+ vhead run-sum sum)
+      (sumo vtail run-sum)])))
 
 (defn adds-up [{:keys [sum lvars]}]
   (sumo lvars sum))
@@ -105,30 +107,13 @@
   (let [clues (clue-notation->clues clue-notation)
         {:keys [lvp-lvar-map x-shape]} (clues->lvars-map clues)
         all-lvars (vals lvp-lvar-map)
-        downs (->> clues
-                   clues->clues-down
-                   (map (fn [{sum :sum :as down-clue}]
-                          {:sum sum
-                           :lvars (->> down-clue
-                                       down->coords
-                                       (map #(x-shape-coords->lvp x-shape %))
-                                       (map #(get lvp-lvar-map %)))})))
-        rights (->> clues
-                    clues->clues-right
-                    (map (fn [{sum :sum :as right-clue}]
-                           {:sum sum
-                            :lvars (->> right-clue
-                                        right->coords
-                                        (map #(x-shape-coords->lvp x-shape %))
-                                        (map #(get lvp-lvar-map %)))})))
+        lvar-groups (clues->lvar-groups clues x-shape lvp-lvar-map)
         is-single-digit #(fd/in % (apply fd/domain (range 1 10)))]
     (-> (l/run 1 [q]
           (l/== q all-lvars)
           (l/everyg is-single-digit all-lvars)
-          (l/everyg adds-up rights)
-          (l/everyg adds-up downs)
-          (l/everyg #(fd/distinct (:lvars %)) rights)
-          (l/everyg #(fd/distinct (:lvars %)) downs))
+          (l/everyg adds-up lvar-groups)
+          (l/everyg #(fd/distinct (:lvars %)) lvar-groups))
         first
         vec)))
 
