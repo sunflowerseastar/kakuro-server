@@ -112,8 +112,8 @@
     (-> (l/run* [q]
           (l/== q all-lvars)
           (l/everyg is-single-digit all-lvars)
-          (l/everyg adds-up lvar-groups)
-          (l/everyg #(fd/distinct (:lvars %)) lvar-groups))
+          (l/everyg #(fd/distinct (:lvars %)) lvar-groups)
+          (l/everyg adds-up lvar-groups))
         vec)))
 
 (def memo-clue-notation->solution-vector
