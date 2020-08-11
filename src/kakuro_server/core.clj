@@ -14,7 +14,7 @@
             [tupelo.core :refer [spyx]])
   (:use [clojail.core :only [thunk-timeout]]))
 
-(def timeout-ms 10000)
+(def timeout-ms 20000)
 
 (defn clue-notation->clues
   "A clue is {:direction :down|:right :sum int :distance int}
